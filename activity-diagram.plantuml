@@ -1,0 +1,61 @@
+@startuml
+|Admin|
+start
+:Login with self auth;
+:Click Facebook Login;
+
+|Frontend|
+:Request Facebook login URL;
+|Backend|
+:Create state + bind user_id;
+|Database|
+:Save to database;
+|Backend|
+:Send Facebook login URL + state;
+
+|Frontend|
+:Open Facebook login popup;
+
+|Facebook|
+:User login + select page;
+:Redirect back with code + state;
+
+|Frontend|
+:POST code + state to Backend;
+
+|Backend|
+:Verify state + user_id;
+|Database|
+:Reply to verification result;
+
+|Backend|
+if (state is correct?) then (yes)
+  |Facebook|
+  :Exchange code to User access token;
+  :Send User access token;
+
+  |Backend|
+  :Get page access token;
+  
+  |Facebook|
+  :Send page access token;
+
+  |Backend|
+  :Save page_id + page_access_token to database;
+  |Database|
+  :Store page info;
+
+  |Backend|
+  :Subscribe webhook;
+  |Facebook|
+  :OK;
+
+  |Backend|
+  :Delete state;
+  :Send success to Frontend;
+else (invalid)
+  :Send error to Frontend;
+endif
+
+stop
+@enduml

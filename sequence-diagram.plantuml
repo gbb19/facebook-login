@@ -1,0 +1,41 @@
+@startuml
+actor Admin
+participant Frontend
+participant Backend
+participant Database
+participant Facebook
+
+Admin ->> Frontend: Log in with app auth
+Frontend ->> Backend: Request Facebook login URL
+Backend ->> Database: Create login state + link with user_id
+Database -->> Backend: OK
+Backend ->> Frontend: Return Facebook login URL + state
+
+Admin ->> Frontend: Click Facebook login
+Frontend ->> Facebook: Open Facebook login popup (URL + state)
+Facebook -->> Admin: User logs in and selects a page
+Facebook ->> Frontend: Redirect back (code + state)
+
+Frontend ->> Backend: POST code + state (with app auth token)
+Backend ->> Database: Verify state and user_id
+Database -->> Backend: Valid or Invalid
+
+alt State is valid
+    Backend ->> Facebook: Exchange code for User access token
+    Facebook -->> Backend: Return User access token
+
+    Backend ->> Facebook: Get page access token (selected page)
+    Facebook -->> Backend: Return page access token
+
+    Backend ->> Database: Save page_id + page_access_token
+    Database -->> Backend: OK
+
+    Backend ->> Facebook: Subscribe to webhook (for each page)
+    Facebook -->> Backend: OK
+
+    Backend ->> Database: Delete state
+    Backend ->> Frontend: Login success
+else State is invalid or expired
+    Backend ->> Frontend: Return error
+end
+@enduml
