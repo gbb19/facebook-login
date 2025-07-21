@@ -2,40 +2,41 @@
 actor Admin
 participant Frontend
 participant Backend
-participant Database
 participant Facebook
 
 Admin ->> Frontend: Log in with app auth
-Frontend ->> Backend: Request Facebook login URL
-Backend ->> Database: Create login state + link with user_id
-Database -->> Backend: OK
-Backend ->> Frontend: Return Facebook login URL + state
+Frontend ->> Backend: GET /shop/{shopId}/facebook/login-url
+
+note right of Backend
+  Create random state + nonce
+  Encode & sign to create secure_state
+end note
+
+Backend -->> Frontend: Return Facebook login URL + secure_state
 
 Admin ->> Frontend: Click Facebook login
-Frontend ->> Facebook: Open Facebook login popup (URL + state)
+Frontend ->> Facebook: Open Facebook login popup (URL + secure_state)
 Facebook -->> Admin: User logs in and selects a page
-Facebook ->> Frontend: Redirect back (code + state)
+Facebook ->> Frontend: Redirect back (code + secure_state)
 
-Frontend ->> Backend: POST code + state (with app auth token)
-Backend ->> Database: Verify state and user_id
-Database -->> Backend: Valid or Invalid
+Frontend ->> Backend: POST /shop/{shopId}/facebook/subscribe\nwith code + secure_state + auth token
 
-alt State is valid
-    Backend ->> Facebook: Exchange code for User access token
-    Facebook -->> Backend: Return User access token
+Backend ->> Backend: Verify secure_state (signature + expiration)
+
+alt secure_state is valid
+    Backend ->> Facebook: Exchange code for user access token
+    Facebook -->> Backend: Return user access token
 
     Backend ->> Facebook: Get page access token (selected page)
     Facebook -->> Backend: Return page access token
 
-    Backend ->> Database: Save page_id + page_access_token
-    Database -->> Backend: OK
+    Backend ->> Backend: Save page_id + page_access_token (in internal DB)
 
     Backend ->> Facebook: Subscribe to webhook (for each page)
     Facebook -->> Backend: OK
 
-    Backend ->> Database: Delete state
-    Backend ->> Frontend: Login success
-else State is invalid or expired
-    Backend ->> Frontend: Return error
+    Backend -->> Frontend: Login success
+else secure_state is invalid or expired
+    Backend -->> Frontend: Return error
 end
 @enduml
