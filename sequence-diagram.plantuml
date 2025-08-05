@@ -5,7 +5,7 @@ participant Backend
 participant Facebook
 
 Admin ->> Frontend: Log in with app auth
-Frontend ->> Backend: GET /shop/{shopId}/facebook/login-url
+Frontend ->> Backend: GET /shop/{shopId}/facebook/page/subscribe
 
 note right of Backend
   Create random state + nonce
@@ -19,7 +19,7 @@ Frontend ->> Facebook: Open Facebook login popup (URL + secure_state)
 Facebook -->> Admin: User logs in and selects a page
 Facebook ->> Frontend: Redirect back (code + secure_state)
 
-Frontend ->> Backend: POST /shop/{shopId}/facebook/subscribe\nwith code + secure_state + auth token
+Frontend ->> Backend: POST /shop/{shopId}/facebook/page/subscribe\nwith code + secure_state + auth token
 
 Backend ->> Backend: Verify secure_state (signature + expiration)
 
